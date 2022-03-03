@@ -5,11 +5,14 @@ import {
   TextInput,
   View,
   TouchableOpacity,
+  Alert,
+  ActivityIndicator
 } from "react-native";
-import React from "react";
+import React, {useState} from "react";
 import * as Yup from "yup";
 import { Formik } from "formik";
 import Validator from "email-validator";
+import {firebase} from '../../data/firebase';
 
 const LoginFormSchema = Yup.object().shape({
   email: Yup.string().email().required("An email is required"),
@@ -19,13 +22,29 @@ const LoginFormSchema = Yup.object().shape({
   ),
 });
 
+
 const LoginForm = ({navigation}) => {
+  const [loading, setLoading] = useState(false);
+
+
+  const onLogin = async (email, password) =>{
+    setLoading(true)
+    try {
+      await firebase.auth().signInWithEmailAndPassword(email, password);
+      Alert.alert('Logueado sastifactorio');
+      setLoading(false)
+    } catch (error) {
+      Alert.alert(error.message);
+      setLoading(false)
+    }
+  }
+
   return (
     <View style={styles.wrapper}>
       <Formik
         initialValues={{ email: "", password: "" }}
         onSubmit={(values) => {
-          console.log(values);
+          onLogin(values.email, values.password)
         }}
         validationSchema={LoginFormSchema}
         validateOnMount={true}
@@ -39,7 +58,7 @@ const LoginForm = ({navigation}) => {
           isValid,
         }) => (
           <>
-            <View style={[styles.inputField, {borderColor: values.email.length < 1 || Validator.validate(values.email) ? '#eee' : 'red'}]}>
+            <View style={[styles.inputField, {borderColor: errors.email ? 'red' : '#eee'}]}>
               <TextInput
                 placeholderTextColor="#444"
                 placeholder="Phone number, username or email"
@@ -74,13 +93,16 @@ const LoginForm = ({navigation}) => {
               style={styles.button(isValid)}
               onPress={handleSubmit}
             >
-              <Text style={styles.buttonText}>Log in</Text>
+              {
+                loading ? <ActivityIndicator size="small" color="#0000ff" /> : <Text style={styles.buttonText}>Log in</Text>
+              }
+              
             </Pressable>
 
             <View style={styles.signupContainer}>
               <Text>Don't have an account? </Text>
 
-              <TouchableOpacity onPress={() => navigation.push('SignupScreen')}>
+              <TouchableOpacity onPress={() => navigation.push('SignupScreen')}>          
                 <Text style={{ color: "#6bb0f5" }}>Sing Up</Text>
               </TouchableOpacity>
             </View>

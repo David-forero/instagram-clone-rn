@@ -5,13 +5,15 @@ import {
   TextInput,
   View,
   TouchableOpacity,
+  ActivityIndicator,
 } from "react-native";
-import React from "react";
+import React, {useState} from "react";
 import * as Yup from "yup";
 import { Formik } from "formik";
 import Validator from "email-validator";
+import {firebase, db} from '../../data/firebase';
 
-const LoginFormSchema = Yup.object().shape({
+const SignupFormSchema = Yup.object().shape({
   email: Yup.string().email().required("An email is required"),
   username: Yup.string().min(2).required("An username is required"),
   password: Yup.string().min(
@@ -20,15 +22,36 @@ const LoginFormSchema = Yup.object().shape({
   ),
 });
 
+
 const SignupForm = ({navigation}) => {
+  const [loading, setLoading] = useState(false);
+
+  const getRandomProfile = async () =>{
+    const res = await fetch('https://randomuser.me/api');
+    const data = await res.json();
+    return data.results[0].picture.large
+  }
+
+  const onSignup = async (email, password, username) => {
+    setLoading(true)
+    try {
+      const authUser = await firebase.auth().createUserWithEmailAndPassword(email, password);
+      db.collection('users').add({uid: authUser.user.uid, username: username, email: authUser.user.email, profile_picture: await getRandomProfile()})
+      setLoading(false);
+    } catch (error) {
+      console.error(error);
+      setLoading(false);
+    }
+  }
+  
   return (
     <View style={styles.wrapper}>
       <Formik
         initialValues={{ email: "", password: "", username: "" }}
         onSubmit={(values) => {
-          console.log(values);
+          onSignup(values.email, values.password, values.username)
         }}
-        validationSchema={LoginFormSchema}
+        validationSchema={SignupFormSchema}
         validateOnMount={true}
       >
         {({
@@ -45,7 +68,7 @@ const SignupForm = ({navigation}) => {
                 styles.inputField,
                 {
                   borderColor:
-                    values.username.length < 1 || Validator.validate(values.username)
+                    !errors.username
                       ? "#eee"
                       : "red",
                 },
@@ -78,7 +101,6 @@ const SignupForm = ({navigation}) => {
                 autoCapitalize="none"
                 keyboardType="email-address"
                 textContentType="emailAddress"
-                autoFocus={true}
                 onChangeText={handleChange("email")}
                 onBlur={handleBlur("email")}
                 value={values.email}
@@ -116,7 +138,9 @@ const SignupForm = ({navigation}) => {
               style={styles.button(isValid)}
               onPress={handleSubmit}
             >
-              <Text style={styles.buttonText}>Sign up</Text>
+               {
+                  loading ? <ActivityIndicator size="small" color="#0000ff" /> :  <Text style={{ color: "#fff" }}>Sign up</Text>
+                }
             </Pressable>
 
             <View style={styles.signupContainer}>

@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "instagram-clone",
+    "name": "Instagram clone",
     "slug": "instagram-clone",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -27,6 +27,7 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "description": ""
   }
 }
